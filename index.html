@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MemSim — Memory Management Visualizer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="scanlines"></div>
+  <div class="noise"></div>
+  <div class="grid-bg"></div>
+
+  <!-- Floating particles -->
+  <div class="particles" id="particles"></div>
+
+  <header>
+    <div class="header-left">
+      <div class="logo">
+        <div class="logo-icon">
+          <div class="logo-hex">⬡</div>
+        </div>
+        <div class="logo-text">
+          <div class="logo-main">MEM<span class="logo-accent">SIM</span></div>
+          <div class="logo-sub">v2.0 · MEMORY MANAGEMENT VISUALIZER</div>
+        </div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="status-pill">
+        <span class="status-dot"></span>
+        <span>SYSTEM ONLINE</span>
+      </div>
+      <div class="header-stats">
+        <div class="hstat">
+          <span class="hstat-val" id="h-mode">PAGING</span>
+          <span class="hstat-lbl">MODE</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- Technique Selector -->
+    <section class="technique-selector">
+      <div class="section-label">
+        <span class="label-line"></span>
+        <span>SELECT MEMORY TECHNIQUE</span>
+        <span class="label-line"></span>
+      </div>
+      <div class="tab-row">
+        <button class="tab-btn active" data-tab="paging">
+          <div class="tab-icon-wrap"><span class="tab-icon">⬡</span></div>
+          <div class="tab-content">
+            <span class="tab-title">Paging</span>
+            <span class="tab-desc">Fixed-size blocks</span>
+          </div>
+          <div class="tab-indicator"></div>
+        </button>
+        <button class="tab-btn" data-tab="segmentation">
+          <div class="tab-icon-wrap"><span class="tab-icon">⬢</span></div>
+          <div class="tab-content">
+            <span class="tab-title">Segmentation</span>
+            <span class="tab-desc">Variable-size segments</span>
+          </div>
+          <div class="tab-indicator"></div>
+        </button>
+        <button class="tab-btn" data-tab="virtual">
+          <div class="tab-icon-wrap"><span class="tab-icon">⬟</span></div>
+          <div class="tab-content">
+            <span class="tab-title">Virtual Memory</span>
+            <span class="tab-desc">Page replacement</span>
+          </div>
+          <div class="tab-indicator"></div>
+        </button>
+      </div>
+    </section>
+
+    <!-- ===================== PAGING MODULE ===================== -->
+    <section class="module" id="module-paging">
+      <div class="module-grid">
+        <div class="input-panel">
+          <div class="panel-label">
+            <span class="panel-label-icon">⬡</span>
+            PAGING PARAMETERS
+          </div>
+
+          <div class="input-group">
+            <label>Physical Memory Size <span class="unit">bytes</span></label>
+            <div class="input-wrapper">
+              <input type="number" id="p-mem-size" value="4096" min="256" max="65536" step="256">
+              <span class="input-suffix">B</span>
+            </div>
+            <div class="input-hint">Total available RAM</div>
+          </div>
+
+          <div class="input-group">
+            <label>Page / Frame Size <span class="unit">bytes</span></label>
+            <div class="input-wrapper">
+              <input type="number" id="p-page-size" value="512" min="64" max="4096" step="64">
+              <span class="input-suffix">B</span>
+            </div>
+            <div class="input-hint">Must be power of 2 (64–4096)</div>
+          </div>
+
+          <div class="input-group">
+            <label>Process Size <span class="unit">bytes</span></label>
+            <div class="input-wrapper">
+              <input type="number" id="p-proc-size" value="1536" min="64">
+              <span class="input-suffix">B</span>
+            </div>
+            <div class="input-hint">Total process memory needed</div>
+          </div>
+
+          <div class="input-group">
+            <label>Logical Address <span class="unit">decimal</span></label>
+            <div class="input-wrapper">
+              <input type="number" id="p-log-addr" value="1100" min="0">
+              <span class="input-suffix">→PA</span>
+            </div>
+            <div class="input-hint">Translate logical → physical</div>
+          </div>
+
+          <button class="simulate-btn" onclick="simulatePaging()">
+            <span class="btn-icon">⬡</span>
+            <span>RUN SIMULATION</span>
+            <span class="btn-arrow">→</span>
+          </button>
+
+          <div class="concept-box">
+            <div class="concept-title">HOW PAGING WORKS</div>
+            <p>Memory is divided into fixed-size <em>frames</em>. Process is divided into equal-size <em>pages</em>. A <em>page table</em> maps pages to frames, eliminating external fragmentation.</p>
+          </div>
+        </div>
+
+        <div class="output-panel" id="paging-output">
+          <div class="panel-label">
+            <span class="panel-label-icon">◈</span>
+            VISUALIZATION
+          </div>
+          <div class="empty-state">
+            <div class="empty-icon">⬡</div>
+            <div class="empty-title">Ready to Simulate</div>
+            <div class="empty-text">Configure parameters and click RUN SIMULATION</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== SEGMENTATION MODULE ===================== -->
+    <section class="module hidden" id="module-segmentation">
+      <div class="module-grid">
+        <div class="input-panel">
+          <div class="panel-label">
+            <span class="panel-label-icon">⬢</span>
+            SEGMENTATION PARAMETERS
+          </div>
+
+          <div class="input-group">
+            <label>Number of Segments</label>
+            <div class="seg-count-control">
+              <button class="count-btn" onclick="adjustSegCount(-1)">−</button>
+              <input type="number" id="s-num-segs" value="4" min="1" max="10">
+              <button class="count-btn" onclick="adjustSegCount(1)">+</button>
+            </div>
+          </div>
+
+          <div id="seg-inputs"><!-- Dynamically generated --></div>
+
+          <button class="outline-btn" onclick="generateSegInputs()">
+            <span>↺</span> REGENERATE FIELDS
+          </button>
+
+          <button class="simulate-btn" onclick="simulateSegmentation()">
+            <span class="btn-icon">⬢</span>
+            <span>RUN SIMULATION</span>
+            <span class="btn-arrow">→</span>
+          </button>
+
+          <div class="concept-box">
+            <div class="concept-title">HOW SEGMENTATION WORKS</div>
+            <p>Process is divided into logical <em>segments</em> (Code, Data, Stack…) of variable sizes. Each has a base address and limit. No internal fragmentation, but external fragmentation can occur.</p>
+          </div>
+        </div>
+
+        <div class="output-panel" id="segmentation-output">
+          <div class="panel-label">
+            <span class="panel-label-icon">◈</span>
+            VISUALIZATION
+          </div>
+          <div class="empty-state">
+            <div class="empty-icon">⬢</div>
+            <div class="empty-title">Ready to Simulate</div>
+            <div class="empty-text">Generate fields, enter sizes, and click RUN SIMULATION</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===================== VIRTUAL MEMORY MODULE ===================== -->
+    <section class="module hidden" id="module-virtual">
+      <div class="module-grid">
+        <div class="input-panel">
+          <div class="panel-label">
+            <span class="panel-label-icon">⬟</span>
+            VIRTUAL MEMORY PARAMETERS
+          </div>
+
+          <div class="input-group">
+            <label>Number of Frames</label>
+            <div class="frames-slider-wrap">
+              <input type="range" id="v-frames-range" min="1" max="8" value="3" oninput="syncFrameSlider(this.value)">
+              <input type="number" id="v-frames" value="3" min="1" max="8" oninput="syncFrameSlider(this.value)">
+            </div>
+            <div class="input-hint">Physical memory frames available</div>
+          </div>
+
+          <div class="input-group">
+            <label>Reference String <span class="unit">space-separated</span></label>
+            <textarea id="v-refstr" rows="2" placeholder="e.g. 7 0 1 2 0 3 0 4 2 3 0 3 2">7 0 1 2 0 3 0 4 2 3 0 3 2</textarea>
+            <div class="input-hint">Page numbers to reference (0–9)</div>
+          </div>
+
+          <div class="input-group">
+            <label>Replacement Algorithm</label>
+            <div class="algo-selector">
+              <button class="algo-btn active" data-algo="fifo">
+                <span class="algo-icon">→</span> FIFO
+              </button>
+              <button class="algo-btn" data-algo="lru">
+                <span class="algo-icon">↺</span> LRU
+              </button>
+            </div>
+          </div>
+
+          <div class="input-group">
+            <label>Quick Reference Presets</label>
+            <div class="preset-btns">
+              <button class="preset-btn" onclick="loadPreset('classic')">Classic</button>
+              <button class="preset-btn" onclick="loadPreset('belady')">Bélády</button>
+              <button class="preset-btn" onclick="loadPreset('random')">Random</button>
+            </div>
+          </div>
+
+          <button class="simulate-btn" onclick="simulateVirtual()">
+            <span class="btn-icon">⬟</span>
+            <span>RUN SIMULATION</span>
+            <span class="btn-arrow">→</span>
+          </button>
+
+          <div class="concept-box">
+            <div class="concept-title">ALGORITHMS COMPARED</div>
+            <p><strong>FIFO</strong>: Evicts the oldest loaded page first.<br>
+            <strong>LRU</strong>: Evicts the least recently used page.</p>
+          </div>
+        </div>
+
+        <div class="output-panel wide" id="virtual-output">
+          <div class="panel-label">
+            <span class="panel-label-icon">◈</span>
+            VISUALIZATION
+          </div>
+          <div class="empty-state">
+            <div class="empty-icon">⬟</div>
+            <div class="empty-title">Ready to Simulate</div>
+            <div class="empty-text">Configure parameters and click RUN SIMULATION</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+      <span>MEMSIM v2.0 · Dynamic Memory Management Visualizer</span>
+      <span>OS Concepts · Paging · Segmentation · Virtual Memory</span>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
